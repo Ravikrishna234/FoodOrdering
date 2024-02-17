@@ -1,0 +1,10 @@
+.tick-container {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .tick {
+    font-size: 5rem;
+    color: green;
+  }
+  
