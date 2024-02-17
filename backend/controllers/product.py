@@ -1,17 +1,24 @@
 from flask import Blueprint, request, jsonify
 from bson.objectid import ObjectId
+from bson.json_util import dumps
 from db import mongo
+import json
 products_bp = Blueprint("products", __name__)
 
 
 @products_bp.route("/<id>")
 def get_product(id):
     try:
-        productData = mongo.db.Products.find_one({"_id":id})
-        return ({"data":productData}),200
-    
+        print({'_id': ObjectId(id)})
+        product_data = mongo.db.Orders.find_one({'_id': ObjectId('65c95f7e7fc3a3b6cb3dae95')})
+        if product_data:
+            serialized_data = dumps(product_data)
+            return ({"data":json.loads(serialized_data)}),200
+        else:
+            return jsonify({'error': 'Product not found'}), 404
+        
     except Exception as e:
-        return jsonify({'error': str(e)}), 500  
+        return jsonify({'error': str(e)}), 500   
 
 @products_bp.route("/", methods=["POST"])
 def create_product():
@@ -29,20 +36,25 @@ def update_product():
         updateData = request.json
         productId = updateData['_id']
         updateData.pop('_id', None)
-        mongo.db.Products.find_one_and_update({'_id':ObjectId(productId)},{'$set': updateData})
-        return jsonify({'message': 'Product Updated Successfully'}), 200
+        result = mongo.db.Products.find_one_and_update({'_id':ObjectId(productId)},{'$set': updateData})
+        if result:
+            return jsonify({'message': 'Product Updated Successfully'}), 200
+        else:
+            return jsonify({'message': 'Product not found'}), 404
 
     except Exception as e:
         print(e)
         return jsonify({'error': str(e)}), 500  
       
-@products_bp.route("/", methods=["DELETE"])
-def delete_product():
+@products_bp.route("/<id>", methods=["DELETE"])
+def delete_product(id):
     try:
-        deleteData = request.json
-        productId = deleteData['_id']
-        deleteData.pop('_id', None)
-        mongo.db.Products.deleteOne({'_id':ObjectId(productId)})
-    except:
+        result = mongo.db.Products.delete_one({'_id':ObjectId(id)})
+        if result:
+            return jsonify({'message': 'Product Deleted Successfully'}), 200
+        else:
+            return jsonify({'message': 'Product not found'}), 404
+            
+    except Exception as e:
         return jsonify({'error': str(e)}), 500  
 

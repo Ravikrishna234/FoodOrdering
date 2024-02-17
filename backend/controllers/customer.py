@@ -7,7 +7,9 @@ customers_bp = Blueprint("customers", __name__)
 @customers_bp.route("/<id>")
 def get_user(id):
     try:
-        userData = mongo.db.Customers.find_one({"_id":id})
+        print(id)
+        userData = mongo.db.Customers.find_one({"_id":ObjectId(id)})
+        print(userData)
         return {
             "data":userData,
         },200
