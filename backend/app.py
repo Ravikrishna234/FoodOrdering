@@ -13,7 +13,7 @@ controller_init(app)
 def test():
     return "<h1>Working</h1>"
 
-app.run()
+app.run(debug=True)
 
 
 
