@@ -9,29 +9,35 @@ register_bp = Blueprint("register",__name__)
 def register_user():
     try:
         registration_data = request.json
-        first_name = registration_data.get('first_name')
-        last_name = registration_data.get('last_name')
+        print(registration_data)
+        first_name = registration_data.get('firstName')
+        last_name = registration_data.get('lastName')
         email = registration_data.get('email')
         password = registration_data.get('password')
-        confirm_password = registration_data.get('confirm_password')
+        confirm_password = registration_data.get('confirmPassword')
         if not all([first_name, last_name, email, password, confirm_password]):
             return jsonify({'error': 'All fields are required.'}), 400
 
         if password != confirm_password:
             return jsonify({'error': 'Passwords do not match.'}), 400
 
+        print('Checking Email exists')
         # Check if email is already registered
         if mongo.db.Customers.find_one({'email': email}):
             return jsonify({'error': 'Email already registered.'}), 400
         
+        print('Email not exists')
         hashed_password = generate_password_hash(password)
+        print('Password has completed')
         user_data = {
-            'first_name': first_name,
-            'last_name': last_name,
+            'firstName': first_name,
+            'lastName': last_name,
             'email': email,
             'password': hashed_password
-        }   
+        }  
+        print('Pushing to Mongo') 
         mongo.db.Customers.insert_one(user_data)
+        print('Pushed to DB')
         return jsonify({'message': 'Registration successful.'}), 200
 
     except Exception as e:
@@ -60,8 +66,8 @@ def login_user_valid():
             return jsonify({'error': 'Incorrect password.'}), 401
     
         userData['_id'] = str(user['_id'])
-        userData['first_name'] = user['first_name']
-        userData['last_name'] = user['last_name']
+        userData['firstName'] = user['firstName']
+        userData['lastName'] = user['lastName']
         userData['email'] = user['email']
         return jsonify({'message': 'Login successful.', 'user': userData}), 200
 
