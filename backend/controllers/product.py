@@ -9,7 +9,8 @@ products_bp = Blueprint("products", __name__)
 @products_bp.route("/<id>")
 def get_product(id):
     try:
-        product_data = mongo.db.Products.find_one({'_id': ObjectId(id)})
+        print({'_id': ObjectId(id)})
+        product_data = mongo.db.Orders.find_one({'_id': ObjectId('65c95f7e7fc3a3b6cb3dae95')})
         if product_data:
             serialized_data = dumps(product_data)
             return ({"data":json.loads(serialized_data)}),200
