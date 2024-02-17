@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify
 from db import mongo
 import json
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 register_bp = Blueprint("register",__name__)
 
 @register_bp.route("/", methods=["POST"])
-def create_user():
+def register_user():
     try:
         registration_data = request.json
         first_name = registration_data.get('first_name')
@@ -36,4 +36,34 @@ def create_user():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500  
+    
 
+login_bp = Blueprint("login",__name__)
+
+@login_bp.route("/", methods=["GET"])
+def login_user_valid():
+    try:
+        login_data = request.json
+        email = login_data.get('email')
+        password = login_data.get('password')
+        userData = {}
+
+        if any([not email, not password]):
+            return jsonify({'error': 'Email and password are required.'}), 400
+
+        user = mongo.db.Customers.find_one({'email': email})
+
+        if not user:
+            return jsonify({'error': 'User not found.'}), 404
+
+        if not check_password_hash(user['password'], password):
+            return jsonify({'error': 'Incorrect password.'}), 401
+    
+        userData['_id'] = str(user['_id'])
+        userData['first_name'] = user['first_name']
+        userData['last_name'] = user['last_name']
+        userData['email'] = user['email']
+        return jsonify({'message': 'Login successful.', 'user': userData}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

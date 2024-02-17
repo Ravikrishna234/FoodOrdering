@@ -16,16 +16,16 @@ def get_user(id):
     except Exception as e:
         return e
 
-@customers_bp.route("/", methods=["POST"])
-def create_user():
-    try:
-        postData = request.json
-        mongo.db.Customers.insert_one(postData)
-        return {
-            "message": "User Created Successfully"
-        }, 200
-    except Exception as e:
-        return e
+# @customers_bp.route("/", methods=["POST"])
+# def create_user():
+#     try:
+#         postData = request.json
+#         mongo.db.Customers.insert_one(postData)
+#         return {
+#             "message": "User Created Successfully"
+#         }, 200
+#     except Exception as e:
+#         return e
 
 @customers_bp.route("/", methods=["PUT"])
 def update_user():
