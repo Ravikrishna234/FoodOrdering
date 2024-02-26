@@ -73,7 +73,7 @@ def get_restaurant(id, flag=None):
             # print(restaurant_with_products)
             # serialized_data = dumps(product_data)
             if(flag == "GETALL"):
-                return restaurant_with_products[0], 200
+                return restaurant_with_products[0]
             
             return jsonify({"restaurant": restaurant_with_products[0]}), 200
         else:

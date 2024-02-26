@@ -26,6 +26,36 @@ def get_cart_info(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500  
 
+@cart_bp.route("/customer/<customerId>", methods=["GET"])
+def get_cart_info_by_customer(customerId):
+    try:
+        product_cart = []
+        customer = list(mongo.db.CartDb.find({'customerId': ObjectId(customerId)}))
+        if customer:
+            cartInfo = []
+            for key in customer:
+                productData = list(mongo.db.Products.find({'_id': key["productId"]}))
+                restaurantData = list(mongo.db.Restaurants.find({'_id':productData[0]["restaurantId"]}))
+                restaurantData[0]["_id"] = str(restaurantData[0]["_id"])
+                for product in productData:
+                    product["_id"] = str(product["_id"])
+                    product["restaurant"] = restaurantData
+                    product["count"] = key["count"]
+                    del product["restaurantId"]
+                    product_cart.append(product)
+
+            cartInfo.append({
+                "_id":str(customer[0]["_id"]),
+                "product":product_cart,
+            })
+
+        if len(cartInfo):    
+            return jsonify({"data": cartInfo}), 200
+        else:
+            return jsonify({"data": "No Items in Cart"}), 200
+    except Exception as e:
+       return jsonify({'error': str(e)}), 500
+
 @cart_bp.route("/", methods=["POST"])
 def create_user_cart():
     try:
