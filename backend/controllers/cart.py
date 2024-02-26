@@ -11,10 +11,14 @@ cart_bp = Blueprint("cart", __name__)
 def get_cart_info(id):
     try:
         print(id)
-        restaurant_data = mongo.db.CartDb.find_one({'_id': ObjectId(id)})
+        cart_data = mongo.db.CartDb.find_one({'_id': ObjectId(id)})
         
-        if restaurant_data:
-            serialized_data = dumps(restaurant_data)
+        if cart_data:
+            cart_data['_id']=str(cart_data['_id'])
+            cart_data['customerId'] = str(cart_data['customerId'])
+            cart_data['productId'] = str(cart_data['productId'])
+            cart_data['restaurantId'] = str(cart_data['restaurantId'])
+            serialized_data = dumps(cart_data)
             return ({"data":json.loads(serialized_data)}),200
         else:
             return jsonify({'error': 'User Cart not found'}), 404
@@ -26,14 +30,10 @@ def get_cart_info(id):
 def create_user_cart():
     try:
         postData = request.json
-
-        mongo.db.CartDb.insert_one(
-            {
-                'Count':postData['count'], 
-                'ProductId':ObjectId(postData['ProductId']),
-                **postData,
-
-            })
+        postData['customerId'] = ObjectId(postData['customerId'])
+        postData['productId'] = ObjectId(postData['productId'])
+        postData['restaurantId'] = ObjectId(postData['restaurantId'])
+        mongo.db.CartDb.insert_one(postData)
         return jsonify({ "message": "Cart Created Successfully" }), 200
     
     except Exception as e: 

@@ -1,10 +1,12 @@
 from flask import Flask
 from db import mongo
-from bson.objectid import ObjectId
+from flask_cors import CORS
+
 
 from controllers import init_app as controller_init
 
 app = Flask(__name__)
+CORS(app)
 
 app.config["MONGO_URI"] = "mongodb+srv://ravikrishnakbf257:Ironman123@cluster0.ipsx71s.mongodb.net/foodordering?retryWrites=true&w=majority"
 

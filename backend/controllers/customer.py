@@ -20,6 +20,7 @@ def get_user(id):
 def create_user():
     try:
         postData = request.json
+        postData['role'] = "customer"
         mongo.db.Customers.insert_one(postData)
         return {
             "message": "User Created Successfully"
