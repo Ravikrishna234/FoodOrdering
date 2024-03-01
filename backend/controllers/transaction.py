@@ -5,6 +5,7 @@ from db import mongo
 import json
 from marshmallow import Schema, fields
 transactions_bp = Blueprint("transactions", __name__)
+from datetime import datetime
 
 class TransactionSchema(Schema):
     amount = fields.Float(required=True)
@@ -63,10 +64,11 @@ def create_transaction():
                'restaurantId':restaurantId,
                'product':product_cart,
                'customerId':customer_id,
-               'orderStatus':'Approved'
+               'orderStatus':'Approved',
+               'orderDate': datetime.strptime(datetime.now().date().strftime("%Y-%m-%d"), "%Y-%m-%d") 
             })
             if processOrder:
-                removeCustomerCart = mongo.db.CartDb.delete_one({'customerId':customer_id})
+                removeCustomerCart = mongo.db.CartDb.delete_many({'customerId':customer_id})
                 if removeCustomerCart:
                     return jsonify({"status":"Success",'message':'Payment Successful'})
         return jsonify({"status":"Error", 'message':'Cart Empty'}) 
