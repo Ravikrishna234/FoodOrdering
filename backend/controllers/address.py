@@ -15,27 +15,30 @@ def get_customerAddress(id):
         
         if addressDb:
             serialized_data = dumps(addressDb)
-            return ({"data":json.loads(serialized_data)}),200
+            return ({"status":"Success","data":json.loads(serialized_data)}),200
         else:
             return jsonify({'error': 'Customer Address not found'}), 404
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500  
+        return jsonify({"status":"Error", 'error': str(e)}), 500  
 
 @address_bp.route("/", methods=["POST"])
 def create_customerAddress():
     try:
         postData = request.json
         
-        mongo.db.CustomerAddress.insert_one(
+        address = mongo.db.CustomerAddress.insert_one(
             {
                 **postData,
                 'CustomerId':ObjectId(postData['CustomerId']), 
             })
-        return jsonify({ "message": "Customer Address Created Successfully" }), 200
+        if address:
+            inserted_address = mongo.db.CustomerAddress.find_one({"_id":address.inserted_id})
+            inserted_address['_id'] = str(inserted_address['_id'])
+            return jsonify({"status":"Success", "message": "Customer Address Created Successfully","data":json.loads(dumps(inserted_address)) }), 200
     
     except Exception as e: 
-        return jsonify({'error': str(e)}), 500  
+        return jsonify({"status":"Error", 'error': str(e)}), 500  
 
 @address_bp.route("/", methods=["PUT"])
 def update_customerAddress():
@@ -43,28 +46,28 @@ def update_customerAddress():
         updateData = request.json
         addressId = updateData['_id']
         if not addressId:
-            return jsonify({"message":"AddressId is incorrect"}), 400
+            return jsonify({"status":"Error","message":"AddressId is incorrect"}), 400
         
         updateData.pop('_id', None)
         result = mongo.db.CustomerAddress.find_one_and_update({'_id':ObjectId(addressId)},{'$set': {'OrderStatus':updateData['OrderStatus']}})
         if result:
-            return jsonify({'message': 'Customer Address Updated Successfully'}), 200
+            return jsonify({"status":"Error", 'message': 'Customer Address Updated Successfully',"data":json.loads(dumps(result))}), 200
         else:
-            return jsonify({"message":'Customer Address not found' }), 404
+            return jsonify({"status":"Error", "message":'Customer Address not found' }), 404
 
     except Exception as e:
         print(e)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"status":"Error", 'error': str(e)}), 500  
         
 @address_bp.route("/<id>", methods=["DELETE"])
 def delete_customerAddress(id):
     try:
-        result = mongo.db.CustomerAddress.deleteOne({'_id':id})
+        result = mongo.db.CustomerAddress.delete_one({'_id':id})
         if result:
-            return jsonify({"message":'Customer Address Deleted Sucessfully'}),200
+            return jsonify({"status":"Success", "message":'Customer Address Deleted Sucessfully'}),200
         else:
-            return jsonify({"message":'Customer Address not found' }), 404
+            return jsonify({"status":"Error","message":'Customer Address not found' }), 404
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500  
+        return jsonify({"status":"Error", 'error': str(e)}), 500  
 

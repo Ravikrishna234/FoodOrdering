@@ -34,9 +34,9 @@ def get_product(id):
             product_data['_id'] = str(product_data['_id'])
             product_data['restaurantId'] = str(product_data['restaurantId'])
 
-            return ({"data":product_data}),200
+            return ({"status":"Success","data":product_data}),200
         else:
-            return jsonify({'error': 'Product not found'}), 404
+            return jsonify({"status":"Error",'error': 'Product not found'}), 404
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500   
@@ -51,10 +51,16 @@ def create_product():
             return jsonify({'error': errors}), 400
         restaurant_id = ObjectId(postData['restaurantId'])
         postData.pop('restaurantId')
-        mongo.db.Products.insert_one(
+        result = mongo.db.Products.insert_one(
             {'restaurantId':restaurant_id,  **postData}
         )
-        return jsonify({ "message": "Product Created Successfully" }), 200
+        if result:
+            productId = str(result.inserted_id)
+            inserted_product = mongo.db.Products.find_one({'_id':productId})
+            inserted_product['_id'] = str(inserted_product['_id'])
+            return jsonify({"status":"Success", "data":json.loads(dumps(inserted_product))})
+        
+        return jsonify({"status":"Error","message": "Product Created Successfully"}), 200
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500  
@@ -73,9 +79,9 @@ def update_product():
         updateData.pop('_id', None)
         result = mongo.db.Products.find_one_and_update({'_id':ObjectId(productId)},{'$set': updateData})
         if result:
-            return jsonify({'message': 'Product Updated Successfully'}), 200
+            return jsonify({"status":"Success",'message': 'Product Updated Successfully',"data":json.loads(dumps(result))}), 200
         else:
-            return jsonify({'message': 'Product not found'}), 404
+            return jsonify({"status":"Success","message": 'Product not found'}), 404
 
     except Exception as e:
         print(e)
@@ -86,9 +92,9 @@ def delete_product(id):
     try:
         result = mongo.db.Products.delete_one({'_id':ObjectId(id)})
         if result:
-            return jsonify({'message': 'Product Deleted Successfully'}), 200
+            return jsonify({"status":"Success",'message': 'Product Deleted Successfully',"data":json.loads(dumps(result))}), 200
         else:
-            return jsonify({'message': 'Product not found'}), 404
+            return jsonify({"status":"Error",'message': 'Product not found'}), 404
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500  

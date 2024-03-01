@@ -7,11 +7,8 @@ from marshmallow import Schema, fields
 transactions_bp = Blueprint("transactions", __name__)
 
 class TransactionSchema(Schema):
-    Amount = fields.Str(required=True)
-    restaurantId=fields.Str(required=True)
-    paymentId=fields.Str(required=True)
-    orderId=fields.Str(required=True)
-
+    amount = fields.Float(required=True)
+    customerId=fields.Str(required=True)
 
 transaction_schema = TransactionSchema()
 
@@ -26,7 +23,7 @@ def get_transaction(id):
             transaction_data['paymentId'] = str(transaction_data['paymentId'])
             transaction_data['orderId'] = str(transaction_data['orderId'])
 
-            return ({"data":transaction_data}),200
+            return ({"status":"Success","data":transaction_data}),200
         else:
             return jsonify({'error': 'Transaction not found'}), 404
         
@@ -41,18 +38,37 @@ def create_transaction():
         errors = transaction_schema.validate(postData)
         if errors:
             return jsonify({'error': errors}), 400
-        restaurant_id = ObjectId(postData['restaurantId'])
-        payment_id = ObjectId(postData['paymentId'])
-        order_id = ObjectId(postData['orderId'])
+        print(postData)
+        customer_id = ObjectId(postData['customerId'])
+        transaction_amount = postData['amount']
+        customerCart = list(mongo.db.CartDb.find({'customerId':customer_id}))
+        if len(customerCart):
+            product_cart = []
+            for key in customerCart:
+                product = {}
+                productData = list(mongo.db.Products.find({'_id': key["productId"]}))
+                product["count"] = key["count"]
+                restaurantId = ObjectId(key["restaurantId"])
+                product['_id'] = productData[0]['_id']
+                product["name"] = productData[0]["name"]
+                product["price"] = productData[0]["price"]
+                product_cart.append(product)
 
-        postData.pop('restaurantId')
-        postData.pop('payment_id')
-        postData.pop('order_id')
+        result = mongo.db.Transactions.insert_one(
+            { 'customerId': customer_id,'amount':transaction_amount })
 
-        mongo.db.Products.insert_one(
-            {'restaurantId':restaurant_id, 'paymentId':payment_id, 'orderId': order_id,**postData}
-        )
-        return jsonify({ "message": "Product Created Successfully" }), 200
-    
+        if result:
+            processOrder = mongo.db.Orders.insert_one({
+               'transactionId': ObjectId(result.inserted_id),
+               'restaurantId':restaurantId,
+               'product':product_cart,
+               'customerId':customer_id,
+               'orderStatus':'Approved'
+            })
+            if processOrder:
+                removeCustomerCart = mongo.db.CartDb.delete_one({'customerId':customer_id})
+                if removeCustomerCart:
+                    return jsonify({"status":"Success",'message':'Payment Successful'})
+        return jsonify({"status":"Error", 'message':'Cart Empty'}) 
     except Exception as e:
         return jsonify({'error': str(e)}), 500  

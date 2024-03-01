@@ -1,6 +1,8 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from bson.objectid import ObjectId
 from db import mongo
+from bson.json_util import dumps
+import json
 customers_bp = Blueprint("customers", __name__)
 
 
@@ -10,9 +12,13 @@ def get_user(id):
         print(id)
         userData = mongo.db.Customers.find_one({"_id":ObjectId(id)})
         print(userData)
-        return {
-            "data":userData,
-        },200
+        if userData:
+            return jsonify({
+                "status":"Success",
+                "data":userData,
+            }),200
+        else:
+            return jsonify({"status":"Error","message":"user details are not found"})
     except Exception as e:
         return e
 
@@ -21,10 +27,15 @@ def create_user():
     try:
         postData = request.json
         postData['role'] = "customer"
-        mongo.db.Customers.insert_one(postData)
-        return {
-            "message": "User Created Successfully"
-        }, 200
+        result = mongo.db.Customers.insert_one(postData)
+        if result:
+            inserted_user = mongo.db.Customers.find_one({'_id':result.inserted_id})
+            inserted_user['_id'] = str(inserted_user['_id'])
+            return jsonify({
+                "status":"Success",
+                "message": "User Created Successfully",
+                "data":json.loads(dumps(inserted_user))
+            }), 200
     except Exception as e:
         return e
 
@@ -34,10 +45,15 @@ def update_user():
         updateData = request.json
         userId = updateData['_id']
         del updateData['_id']
-        mongo.db.Customers.find_one_and_update({'_id':ObjectId(userId)},{'$set': updateData})
-        return {
-            'message': 'User Updated Successfully'
-        }, 200
+        result = mongo.db.Customers.find_one_and_update({'_id':ObjectId(userId)},{'$set': updateData})
+        if result:
+            return jsonify({
+                "status":"Success",
+                'message': 'User Updated Successfully',
+                "data":json.loads(dumps(result))
+            }), 200
+        else:
+            return jsonify({"status":"Success","message":"Error in Updating"})
     except Exception as e:
         print(e)
         return e

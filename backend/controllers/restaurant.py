@@ -34,7 +34,7 @@ def get_all_restaurants():
             else:
                 print(f"No details found for restaurant ID: {restaurant_id}")
 
-        return jsonify({"restaurants": restaurantProductCollection}), 200
+        return jsonify({"status":"Success","data": restaurantProductCollection}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -75,9 +75,9 @@ def get_restaurant(id, flag=None):
             if(flag == "GETALL"):
                 return restaurant_with_products[0]
             
-            return jsonify({"restaurant": restaurant_with_products[0]}), 200
+            return jsonify({"status":"Success","data": restaurant_with_products[0]}), 200
         else:
-            return jsonify({'error': 'Restaurant not found'}), 404
+            return jsonify({"status":"Error",'message': 'Restaurant not found'}), 404
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500  
@@ -92,9 +92,11 @@ def create_restaurant():
             return jsonify({'error': errors}), 400
         result = mongo.db.Restaurants.insert_one(postData)
         if result:
-            return jsonify({ "message": "Restaurant Created Successfully" }), 200
+            inserted_restaurant = mongo.db.Restaurant.find_one({'_id':result.inserted_id})
+            inserted_restaurant['_id'] = str(inserted_restaurant['_id'])
+            return jsonify({ "status":"Success","message": "Restaurant Created Successfully" ,"data":inserted_restaurant}), 200
         else:
-            return jsonify({"message":"Restaurant was not created"}), 500
+            return jsonify({"status":"Error","message":"Restaurant was not created"}), 500
     
     except Exception as e: 
         return jsonify({'error': str(e)}), 500  
@@ -110,9 +112,9 @@ def update_restaurant():
         updateData.pop('_id', None)
         result = mongo.db.Restaurants.find_one_and_update({'_id':ObjectId(restaurantId)},{'$set': updateData})
         if result:
-            return jsonify({'message': 'Restaurant Details Updated Successfully'}), 200
+            return jsonify({"status":"Success",'message': 'Restaurant Details Updated Successfully',"data":json.loads(dumps(result))}), 200
         else:
-            return jsonify({'message':'Restaurant not found'}), 404
+            return jsonify({"status":"Error",'message':'Restaurant not found'}), 404
 
     except Exception as e:
         print(e)

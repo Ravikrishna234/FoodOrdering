@@ -16,15 +16,15 @@ def register_user():
         password = registration_data.get('password')
         confirm_password = registration_data.get('confirmPassword')
         if not all([first_name, last_name, email, password, confirm_password]):
-            return jsonify({'error': 'All fields are required.'}), 400
+            return jsonify({"status":"Error",'message': 'All fields are required.'}), 400
 
         if password != confirm_password:
-            return jsonify({'error': 'Passwords do not match.'}), 400
+            return jsonify({"status":"Error",'message': 'Passwords do not match.'}), 400
 
         print('Checking Email exists')
         # Check if email is already registered
         if mongo.db.Customers.find_one({'email': email}):
-            return jsonify({'error': 'Email already registered.'}), 400
+            return jsonify({"status":"Error",'message': 'Email already registered.'}), 400
         
         print('Email not exists')
         hashed_password = generate_password_hash(password)
@@ -36,12 +36,12 @@ def register_user():
             'password': hashed_password
         }  
         print('Pushing to Mongo') 
-        mongo.db.Customers.insert_one(user_data)
+        mongo.db.users.insert_one(user_data)
         print('Pushed to DB')
         return jsonify({'message': 'Registration successful.'}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500  
+        return jsonify({"status":"Error",'error': str(e)}), 500  
     
 
 login_bp = Blueprint("login",__name__)
@@ -55,21 +55,21 @@ def login_user_valid():
         userData = {}
 
         if any([not email, not password]):
-            return jsonify({'error': 'Email and password are required.'}), 400
+            return jsonify({"status":'Error',"message": 'Email and password are required.'}), 400
 
-        user = mongo.db.Customers.find_one({'email': email})
+        user = mongo.db.users.find_one({'email': email})
 
         if not user:
-            return jsonify({'error': 'User not found.'}), 404
+            return jsonify({"status":'Error',"message": 'User not found.'}), 404
 
         if not check_password_hash(user['password'], password):
-            return jsonify({'error': 'Incorrect password.'}), 401
+            return jsonify({"status":'Error',"message": 'Incorrect password.'}), 401
     
         userData['_id'] = str(user['_id'])
         userData['firstName'] = user['firstName']
         userData['lastName'] = user['lastName']
         userData['email'] = user['email']
-        return jsonify({'message': 'Login successful.', 'user': userData}), 200
+        return jsonify({"status":"Success","message": 'Login successful.', 'user': userData}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
