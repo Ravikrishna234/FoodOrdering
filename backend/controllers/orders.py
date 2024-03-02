@@ -22,24 +22,29 @@ def get_order_info(id):
     except Exception as e:
         return jsonify({"status":"Error",'error': str(e)}), 500 
  
+def get_order_total(records, index):
+        order_total = 0
+        for j in range(len(records[index]["product"])):
+            order_total += records[index]["product"][j]["price"]
+        return order_total
+
 @orders_bp.route("/user",methods=["GET"])
 def get_all_orders(customerId=None):
     try:
         customerId = request.args.get('customerId')
-        admin = request.args.get('admin', default=False, type=bool)
-        if admin:
+        admin = request.args.get('admin')
+        if admin == "True":
             allRecord = list(mongo.db.Orders.find({}))
+            for i in range(len(allRecord)):
+                allRecord[i]['orderTotal'] = get_order_total(allRecord, i)
+
             return jsonify({"data":json.loads(dumps(allRecord))})
         else:
             customerId = request.args.get('customerId')
             customerOrder = list(mongo.db.Orders.find({'customerId': ObjectId(customerId)}))
 
             for i in range(len(customerOrder)):
-                order_total = 0
-                print(i)
-                for j in range(len(customerOrder[i]["product"])):
-                    order_total += customerOrder[i]["product"][j]["price"]
-                customerOrder[i]['orderTotal'] = order_total
+                customerOrder[i]['orderTotal'] = get_order_total(customerOrder, i)
 
             if(len(customerOrder)):
                 return jsonify({"status":"Success",
