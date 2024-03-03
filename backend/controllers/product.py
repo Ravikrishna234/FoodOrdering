@@ -10,7 +10,6 @@ class ProductSchema(Schema):
     name = fields.Str(required=True)
     price = fields.Float(required=True)
     veg=fields.Bool(required=True)
-    category=fields.Str(required=True)
     restaurantId=fields.Str(required=True)
 
 class ProductUpdateSchema(Schema):
@@ -18,7 +17,6 @@ class ProductUpdateSchema(Schema):
     name = fields.Str()
     price = fields.Float()
     veg = fields.Bool()
-    category = fields.Str()
     restaurantId = fields.Str(required=True)
 
 product_schema = ProductSchema()
@@ -48,30 +46,33 @@ def create_product():
         postData = request.json
         errors = product_schema.validate(postData)
         if errors:
-            return jsonify({'error': errors}), 400
+            return jsonify({'error': errors,"message":"Missing fields"}), 400
+
         restaurant_id = ObjectId(postData['restaurantId'])
         postData.pop('restaurantId')
         result = mongo.db.Products.insert_one(
             {'restaurantId':restaurant_id,  **postData}
         )
+
         if result:
             productId = str(result.inserted_id)
-            inserted_product = mongo.db.Products.find_one({'_id':productId})
+            inserted_product = mongo.db.Products.find_one({'_id':ObjectId(productId)})
             inserted_product['_id'] = str(inserted_product['_id'])
-            return jsonify({"status":"Success", "data":json.loads(dumps(inserted_product))})
+            inserted_product['restaurantId'] = str(inserted_product['restaurantId'])
+            return jsonify({"status":"Success", "message":"Product created successfully","data":json.loads(dumps(inserted_product))})
         
-        return jsonify({"status":"Error","message": "Product Created Successfully"}), 200
+        return jsonify({"status":"Error","message": "Product not Created"}), 200
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500  
 
-@products_bp.route("/", methods=["PUT"])
+@products_bp.route("/", methods=["PATCH"])
 def update_product():
     try:
         updateData = request.json
         errors = product_update_schema.validate(updateData)
         if errors:
-            return jsonify({'error': errors}), 400
+            return jsonify({'error': errors,"message":"Missing fields"}), 400
         
         restaurant_id = ObjectId(updateData['restaurantId'])
         updateData.pop('restaurantId')
@@ -79,6 +80,8 @@ def update_product():
         updateData.pop('_id', None)
         result = mongo.db.Products.find_one_and_update({'_id':ObjectId(productId)},{'$set': updateData})
         if result:
+            result['_id'] = str(result['_id'])
+            result['restaurantId'] = str(result['restaurantId'])
             return jsonify({"status":"Success",'message': 'Product Updated Successfully',"data":json.loads(dumps(result))}), 200
         else:
             return jsonify({"status":"Success","message": 'Product not found'}), 404
@@ -92,7 +95,7 @@ def delete_product(id):
     try:
         result = mongo.db.Products.delete_one({'_id':ObjectId(id)})
         if result:
-            return jsonify({"status":"Success",'message': 'Product Deleted Successfully',"data":json.loads(dumps(result))}), 200
+            return jsonify({"status":"Success",'message': 'Product Deleted Successfully'}), 200
         else:
             return jsonify({"status":"Error",'message': 'Product not found'}), 404
             

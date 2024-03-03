@@ -2,14 +2,28 @@ from flask import Blueprint, request, jsonify
 from db import mongo
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
+from marshmallow import Schema, fields
 
 register_bp = Blueprint("register",__name__)
+
+class RegisterSchema(Schema):
+    firstName=fields.Str(required=True)
+    lastName=fields.Str(required=True)
+    email=fields.Str(required=True)
+    password=fields.Str(required=True)
+    confirmPassword=fields.Str(required=True)
+
+register_schema = RegisterSchema()
 
 @register_bp.route("/", methods=["POST"])
 def register_user():
     try:
         registration_data = request.json
         print(registration_data)
+        errors = register_schema.validate(registration_data)
+        if errors:
+            return jsonify({'error': errors,"message":"Missing fields"}), 400
+        
         first_name = registration_data.get('firstName')
         last_name = registration_data.get('lastName')
         email = registration_data.get('email')
@@ -64,6 +78,7 @@ def login_user_valid():
 
         if user["role"] == 'admin':
             if user['password'] == password:
+                user['_id'] = str(user['_id'])
                 return jsonify({"status":"Success","message": 'Login successful.', 'user':user}), 200
 
         if not check_password_hash(user['password'], password):

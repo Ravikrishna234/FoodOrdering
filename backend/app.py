@@ -14,7 +14,6 @@ mongo.init_app(app)
 
 controller_init(app)
 
-@app.route("/")
 def test():
     try:
         user = mongo.db.users.find_one({"email":"admin@gmail.com"})
@@ -31,7 +30,7 @@ def test():
         return jsonify({'message': "Error occured"})
 
 
-
+test()
 app.run(debug=True)
 
 

@@ -92,7 +92,7 @@ def create_restaurant():
             return jsonify({'error': errors}), 400
         result = mongo.db.Restaurants.insert_one(postData)
         if result:
-            inserted_restaurant = mongo.db.Restaurant.find_one({'_id':result.inserted_id})
+            inserted_restaurant = mongo.db.Restaurants.find_one({'_id':ObjectId(result.inserted_id)})
             inserted_restaurant['_id'] = str(inserted_restaurant['_id'])
             return jsonify({ "status":"Success","message": "Restaurant Created Successfully" ,"data":inserted_restaurant}), 200
         else:
@@ -101,7 +101,7 @@ def create_restaurant():
     except Exception as e: 
         return jsonify({'error': str(e)}), 500  
 
-@restaurants_bp.route("/", methods=["PUT"])
+@restaurants_bp.route("/", methods=["PATCH"])
 def update_restaurant():
     try:
         updateData = request.json
@@ -112,6 +112,7 @@ def update_restaurant():
         updateData.pop('_id', None)
         result = mongo.db.Restaurants.find_one_and_update({'_id':ObjectId(restaurantId)},{'$set': updateData})
         if result:
+            result['_id'] = str(result['_id'])
             return jsonify({"status":"Success",'message': 'Restaurant Details Updated Successfully',"data":json.loads(dumps(result))}), 200
         else:
             return jsonify({"status":"Error",'message':'Restaurant not found'}), 404

@@ -10,6 +10,7 @@ from datetime import datetime
 class TransactionSchema(Schema):
     amount = fields.Float(required=True)
     customerId=fields.Str(required=True)
+    addressId=fields.Str(required=True)
 
 transaction_schema = TransactionSchema()
 
@@ -41,8 +42,11 @@ def create_transaction():
             return jsonify({'error': errors}), 400
         print(postData)
         customer_id = ObjectId(postData['customerId'])
+        address_id = ObjectId(postData['addressId'])
         transaction_amount = postData['amount']
         customerCart = list(mongo.db.CartDb.find({'customerId':customer_id}))
+        global restaurantId
+        product_cart = []
         if len(customerCart):
             product_cart = []
             for key in customerCart:
@@ -61,11 +65,12 @@ def create_transaction():
         if result:
             processOrder = mongo.db.Orders.insert_one({
                'transactionId': ObjectId(result.inserted_id),
+               'addressId':ObjectId(address_id),
                'restaurantId':restaurantId,
                'product':product_cart,
                'customerId':customer_id,
                'orderStatus':'Approved',
-               'orderDate': datetime.strptime(datetime.now().date().strftime("%Y-%m-%d"), "%Y-%m-%d") 
+               'orderDate': datetime.now()
             })
             if processOrder:
                 removeCustomerCart = mongo.db.CartDb.delete_many({'customerId':customer_id})
