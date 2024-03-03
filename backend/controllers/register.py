@@ -76,7 +76,7 @@ def login_user_valid():
         if not user:
             return jsonify({"status":'Error',"message": 'User not found.'}), 404
 
-        if user["role"] == 'admin':
+        if user.get('role', None) and user["role"] == 'admin':
             if user['password'] == password:
                 user['_id'] = str(user['_id'])
                 return jsonify({"status":"Success","message": 'Login successful.', 'user':user}), 200
